@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -e
+
+usage() {
+  echo "Usage: $0 <host> <port>" >&2
+  exit 1
+}
+
+if [ -n "$1" ]; then
+  host="$1"
+else
+  echo "Please specify host!" >&2
+  usage
+fi
+if [ -n "$2" ]; then
+  port="$2"
+else
+  echo "Please specify port!" >&2
+  usage
+fi
+
+count=0
+while ! nc -w 1 "$host" "$port" </dev/null >/dev/null
+do
+  echo "Waiting for $host:$port to get ready..."
+  sleep 2
+  : $((count++))
+  if [ $count -gt 10 ]; then
+    echo "Waiting for $host:$port timed out!"
+    exit 2
+  fi
+done
+
+exit 0

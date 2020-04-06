@@ -1,4 +1,3 @@
 #!/bin/sh
 
-echo "Starting IcingaDB with commandline: $*"
 exec icingadb.bin --config /etc/icingadb/icingadb.ini "$@"

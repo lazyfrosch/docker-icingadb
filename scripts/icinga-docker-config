@@ -5,8 +5,9 @@ set -eu
 : "${ICINGA_REDIS_HOST:=redis}"
 : "${ICINGA_REDIS_PORT:=6379}" # Note: This is the standard redis port - Icinga would use 8380 by default
 : "${ICINGA_REDIS_PASSWORD:=}"
+: "${ICINGA_MYSQL_INSTALL_SCHEMA:=true}"
 : "${ICINGA_MYSQL_HOST:=mysql}"
-: "${ICINGA_MYSQL_PORT:=}"
+: "${ICINGA_MYSQL_PORT:=3306}"
 : "${ICINGA_MYSQL_DATABASE:=icingadb}"
 : "${ICINGA_MYSQL_USERNAME:=icingadb}"
 : "${ICINGA_MYSQL_PASSWORD:=icingadb}"
@@ -15,10 +16,35 @@ set -eu
 : "${ICINGA_METRICS_PORT:=8080}"
 
 config_file=/etc/icingadb/icingadb.ini
+schema_mysql=/schema/mysql/mysql.schema.sql
 
-echo "Configuring icingadb from the environment"
+mysql() {
+  MYSQL_PWD="${ICINGA_MYSQL_PASSWORD}" command mysql \
+    -h "${ICINGA_MYSQL_HOST}" -P "${ICINGA_MYSQL_PORT}" \
+    -u "${ICINGA_MYSQL_USERNAME}"\
+    "${ICINGA_MYSQL_DATABASE}" "$@"
+}
 
-content="# Managed by icinga-docker-config
+test_mysql_connection() {
+  echo "Checking MySQL Database connection"
+  wait-for-tcp "${ICINGA_MYSQL_HOST}" "${ICINGA_MYSQL_PORT}"
+  if ! mysql -e "SELECT 1" >/dev/null; then
+    echo "Could not connect to database" >&2
+    exit 1
+  fi
+}
+
+check_db_schema() {
+  if ! mysql -e "SHOW TABLES LIKE 'icingadb_schema';" | grep -q icingadb_schema; then
+    echo "Installing Icinga DB schema"
+    mysql < "${schema_mysql}"
+  fi
+}
+
+write_config() {
+  echo "Configuring icingadb from the environment"
+
+  content="# Managed by icinga-docker-config
 
 [redis]
 host=\"${ICINGA_REDIS_HOST}\"
@@ -45,4 +71,11 @@ port=${ICINGA_METRICS_PORT}
 "
 fi
 
-echo "$content" > "$config_file"
+  echo "$content" > "$config_file"
+}
+
+write_config
+if [[ "$ICINGA_MYSQL_INSTALL_SCHEMA" = true ]]; then
+  test_mysql_connection
+  check_db_schema
+fi

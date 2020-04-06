@@ -15,7 +15,7 @@ RUN go build -o icingadb .
 
 FROM alpine
 
-RUN apk add -U bash shadow \
+RUN apk add -U bash shadow mysql-client netcat-openbsd \
  && rm -rf /var/cache/apk
 
 RUN groupadd -g 1000 icingadb \
