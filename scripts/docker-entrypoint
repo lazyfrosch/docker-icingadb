@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+if [ "${ICINGA_NO_CONFIG}" != true ]; then
+  icinga-docker-config
+fi
+
+exec "$@"

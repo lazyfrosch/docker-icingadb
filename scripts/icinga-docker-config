@@ -1,0 +1,48 @@
+#!/bin/bash
+
+set -eu
+
+: "${ICINGA_REDIS_HOST:=redis}"
+: "${ICINGA_REDIS_PORT:=6379}" # Note: This is the standard redis port - Icinga would use 8380 by default
+: "${ICINGA_REDIS_PASSWORD:=}"
+: "${ICINGA_MYSQL_HOST:=mysql}"
+: "${ICINGA_MYSQL_PORT:=}"
+: "${ICINGA_MYSQL_DATABASE:=icingadb}"
+: "${ICINGA_MYSQL_USERNAME:=icingadb}"
+: "${ICINGA_MYSQL_PASSWORD:=icingadb}"
+: "${ICINGA_LOGGING_LEVEL:=info}"
+: "${ICINGA_METRICS_HOST:=}"
+: "${ICINGA_METRICS_PORT:=8080}"
+
+config_file=/etc/icingadb/icingadb.ini
+
+echo "Configuring icingadb from the environment"
+
+content="# Managed by icinga-docker-config
+
+[redis]
+host=\"${ICINGA_REDIS_HOST}\"
+port=${ICINGA_REDIS_PORT}
+password=${ICINGA_REDIS_PASSWORD}
+
+[mysql]
+host=\"${ICINGA_MYSQL_HOST}\"
+port=\"${ICINGA_MYSQL_PORT}\"
+database=\"${ICINGA_MYSQL_DATABASE}\"
+user=\"${ICINGA_MYSQL_USERNAME}\"
+password=\"${ICINGA_MYSQL_PASSWORD}\"
+
+[logging]
+level=\"${ICINGA_LOGGING_LEVEL}\"
+"
+
+if [[ -n "$ICINGA_METRICS_HOST" ]]; then
+  content+="
+
+[metrics]
+host=\"${ICINGA_METRICS_HOST}\"
+port=${ICINGA_METRICS_PORT}
+"
+fi
+
+echo "$content" > "$config_file"
