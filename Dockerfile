@@ -2,9 +2,12 @@ FROM golang:1.14-alpine as build
 
 RUN apk add -U git gcc libc-dev
 
-ENV ICINGADB_VERSION=1.0.0-rc1
+ENV ICINGADB_VERSION=v1.0.0-rc1-66-gc0b6e8d \
+    ICINGADB_GIT_REF=c0b6e8d202be4d51260a8ae4dea53e987ab1ace9
 
-RUN git clone https://github.com/Icinga/icingadb.git -b "v${ICINGADB_VERSION}" /icingadb
+RUN git clone https://github.com/Icinga/icingadb.git /icingadb \
+ && cd /icingadb \
+ && git checkout -f "${ICINGADB_GIT_REF}"
 
 WORKDIR /icingadb
 
